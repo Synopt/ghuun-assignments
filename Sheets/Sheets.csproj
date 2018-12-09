@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.36.1.1428" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameConcepts\GameConcepts.csproj" />
+  </ItemGroup>
+
+</Project>
