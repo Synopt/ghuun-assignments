@@ -1,16 +1,18 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using GameConcepts.Players;
+using GameConcepts.Gateways;
 
 namespace GameConcepts.Orbs
 {
     public class OrbAssignmentLogic
     {
         private Dictionary<int, OrbSet> Assignments { get; set; }
+        private GatewayAssignment GatewayAssignment { get; set; }
         private bool MonkStatueOnRightSide = false;
         private bool MonkStatueOnLeftSide = false;
 
-        public OrbAssignmentLogic()
+        public OrbAssignmentLogic(GatewayAssignment gatewayAssignment)
         {
             Assignments = new Dictionary<int, OrbSet>
             {
@@ -20,20 +22,24 @@ namespace GameConcepts.Orbs
                 {4, new OrbSet() },
                 {5, new OrbSet() },
             };
+
+            GatewayAssignment = gatewayAssignment;
         }
 
-        public Dictionary<int, OrbSet> AssignPlayers(List<Player> team)
+        public List<OrbAssignment> AssignPlayers(List<Player> team)
         {
             AssignTanks(team);
             AssignHealers(team);
-            AssignWarlocks(team);
+            AssignGatewayLocks(team);
             AssignTeleportingDps(team);
-            AssignRest(team);
 
-            return Assignments;
+            var assignmentsList = ListAssignments();
+            AssignRest(team, assignmentsList);
+
+            return assignmentsList;
         }
 
-        public List<OrbAssignment> ListAssignments()
+        private List<OrbAssignment> ListAssignments()
         {
             return Assignments.SelectMany(i => i.Value.Pairs.SelectMany(pa => pa.Value.Positions.Select(po => new OrbAssignment
             {
@@ -52,12 +58,12 @@ namespace GameConcepts.Orbs
             foreach (var tank in tanks)
             {
                 var set = setsRemaining.FirstOrDefault();
-                if(set == default(int)) { break; }
+                if (set == default(int)) { break; }
 
-                var leftSide = set % 2 == 1;
+                var leftSide = set % 2 == 0;
                 var pair = leftSide ? Assignments[set].LeftPair : Assignments[set].RightPair;
                 if (tank.IsTeleporter) { pair.Catcher = tank; }
-                
+
                 else { pair.Thrower = tank; }
 
                 setsRemaining.RemoveAt(0);
@@ -66,64 +72,90 @@ namespace GameConcepts.Orbs
 
         private void AssignHealers(List<Player> team)
         {
-            var healers = team.OrderBy(p => p.Name).Where(p => p.Role == PlayerRole.Healer);
+            var healers = team.OrderBy(p => p.Mobility).ThenBy(p => p.Name).Where(p => p.Role == PlayerRole.Healer);
             var setsRemaining = new List<int> { 1, 2, 3, 4, 5 };
-            
+
             foreach (var healer in healers)
             {
-                var set = setsRemaining.FirstOrDefault();
+                var set = setsRemaining.OrderBy(s => HardestSets(s)).FirstOrDefault();
                 if (set == default(int)) { break; }
 
-                var leftSide = set % 2 == 0;
+                var leftSide = set % 2 == 1;
                 var pair = leftSide ? Assignments[set].LeftPair : Assignments[set].RightPair;
                 if (healer.IsTeleporter) { pair.Catcher = healer; }
                 else { pair.Thrower = healer; }
 
                 if (healer.Class == PlayerClass.Monk)
                 {
-                    if (leftSide)
-                    {
-                        MonkStatueOnLeftSide = true;
-                    }
-                    else
-                    {
-                        MonkStatueOnRightSide = true;
-                    }
+                    if (leftSide) { MonkStatueOnLeftSide = true; }
+                    else { MonkStatueOnRightSide = true; }
                 }
 
-                setsRemaining.RemoveAt(0);
+                setsRemaining.Remove(set);
             }
         }
 
-        private void AssignWarlocks(List<Player> team)
+        private int HardestSets(int s)
         {
-            var warlocks = team.OrderBy(p => p.Name).Where(p => p.Class == PlayerClass.Warlock).ToList();
+            var gateOnCloseLeft = GatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Close] != null;
+            var gateOnCloseRight = GatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Close] != null;
 
-            var toggle = OrbSide.Left;
-
-            foreach (var warlock in warlocks)
+            if (IsLeftSide(s))
             {
-                foreach (var assignment in Assignments)
+                return gateOnCloseLeft ? 1 : 0;
+            }
+            else
+            {
+                return gateOnCloseRight ? 1 : 0;
+            }
+        }
+
+        private object HardestRuns(OrbAssignment assignment)
+        {
+            var gateOnCloseLeft = GatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Close] != null;
+            var gateOnCloseRight = GatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Close] != null;
+
+            if(assignment.Side == OrbSide.Left)
+            {
+                return gateOnCloseLeft ? 1 : 0;
+            }
+            else
+            {
+                return gateOnCloseRight ? 1 : 0;
+            }
+        }
+
+        private bool IsLeftSide(int s) => s % 2 == 1;
+
+        private void AssignGatewayLocks(List<Player> team)
+        {
+            foreach (var gatewaySide in GatewayAssignment.Side)
+            {
+                foreach (var gatewayPosition in gatewaySide.Value.Position)
                 {
-                    if(toggle == OrbSide.Left)
+                    if (gatewaySide.Key == OrbSide.Left)
                     {
-                        if (assignment.Value.LeftPair.Catcher == null)
+                        foreach (var assignment in Assignments)
                         {
-                            assignment.Value.LeftPair.Catcher = warlock;
-                            break;
+                            if (assignment.Value.LeftPair.Catcher == null)
+                            {
+                                assignment.Value.LeftPair.Catcher = gatewayPosition.Value;
+                                break;
+                            }
                         }
                     }
                     else
                     {
-                        if (assignment.Value.RightPair.Catcher == null)
+                        foreach (var assignment in Assignments)
                         {
-                            assignment.Value.RightPair.Catcher = warlock;
-                            break;
+                            if (assignment.Value.RightPair.Catcher == null)
+                            {
+                                assignment.Value.RightPair.Catcher = gatewayPosition.Value;
+                                break;
+                            }
                         }
                     }
                 }
-
-                toggle = toggle == OrbSide.Left ? OrbSide.Right : OrbSide.Left;
             }
         }
 
@@ -132,23 +164,22 @@ namespace GameConcepts.Orbs
             var dpses = team.OrderBy(p => p.Class)
                             .ThenBy(p => p.Name)
                             .Where(p => p.IsTeleporter)
-                            .Where(p => p.Class != PlayerClass.Warlock)
-                            .Where(p => p.Role == PlayerRole.MeleeDps || p.Role == PlayerRole.RangedDps)
+                            .Where(p => !IsAssigned(p))
                             .ToList();
 
             foreach (var dps in dpses)
             {
                 foreach (var assignment in Assignments)
                 {
-                    if(assignment.Value.LeftPair.Catcher == null)
+                    if (assignment.Value.LeftPair.Catcher == null)
                     {
                         if (dps.CanTeleportUp(MonkStatueOnLeftSide))
                         {
                             assignment.Value.LeftPair.Catcher = dps;
                             break;
-                        }                        
+                        }
                     }
-                    if(assignment.Value.RightPair.Catcher == null)
+                    if (assignment.Value.RightPair.Catcher == null)
                     {
                         if (dps.CanTeleportUp(MonkStatueOnRightSide))
                         {
@@ -159,39 +190,17 @@ namespace GameConcepts.Orbs
                 }
             }
         }
-        
-        private void AssignRest(List<Player> team)
-        {
-            var unassignedPlayers = team.OrderBy(p => p.Name).Where(p => !IsAssigned(p));
 
+        private void AssignRest(List<Player> team, List<OrbAssignment> assignmentsList)
+        {
+            var unassignedPlayers = team.OrderBy(p => p.Mobility).ThenBy(p => p.Name).Where(p => !IsAssigned(p));
+            var unassignedOrbs = assignmentsList.Where(a => a.Player == null).OrderBy(a => HardestRuns(a)).ToList();
+            
             foreach (var player in unassignedPlayers)
             {
-                foreach (var assignment in Assignments)
-                {
-                    var leftPair = assignment.Value.LeftPair;
-                    if(leftPair.Catcher == null)
-                    {
-                        leftPair.Catcher = player;
-                        break;
-                    }
-                    if(leftPair.Thrower == null)
-                    {
-                        leftPair.Thrower = player;
-                        break;
-                    }
-                    var rightPair = assignment.Value.RightPair;
-                    if (rightPair.Catcher == null)
-                    {
-                        rightPair.Catcher = player;
-                        break;
-                    }
-                    if (rightPair.Thrower == null)
-                    {
-                        rightPair.Thrower = player;
-                        break;
-                    }
-
-                }
+                var assignment = unassignedOrbs.First();
+                assignment.Player = player;
+                unassignedOrbs.Remove(assignment);
             }
         }
 
@@ -200,7 +209,7 @@ namespace GameConcepts.Orbs
             foreach (var assignment in Assignments)
             {
                 var leftPair = assignment.Value.LeftPair;
-                if(leftPair.Catcher == player || leftPair.Thrower == player)
+                if (leftPair.Catcher == player || leftPair.Thrower == player)
                 {
                     return true;
                 }

@@ -5,66 +5,43 @@ using System.Linq;
 
 namespace GameConcepts.Gateways
 {
-    public class GatewayAssignmentLogic
+    public static class GatewayAssignmentLogic
     {
-        private GatewayAssignment _assignment = new GatewayAssignment();
-
-        public GatewayAssignment AssignPlayers(List<OrbAssignment> orbAssignments)
+        public static GatewayAssignment AssignGateways(List<Player> team)
         {
-            var warlocks = orbAssignments.Where(a => a.Player.Class == PlayerClass.Warlock).ToList();
-            var teleportingLocks = warlocks.Where(w => w.Role == OrbRole.Catcher).ToList();
+            var assignment = new GatewayAssignment();
 
-            var leftOnlyLocks = teleportingLocks.Where(w => w.Side == OrbSide.Left).ToList();
-            var rightOnlyLocks = teleportingLocks.Where(w => w.Side == OrbSide.Right).ToList();
-            var flexibleLocks = warlocks.Where(w => w.Role == OrbRole.Thrower).ToList();
+            var warlocks = team.Where(p => p.Class == PlayerClass.Warlock).OrderBy(w => w.Name).ToList();
 
-            AssignLeftSide(leftOnlyLocks.Union(flexibleLocks));
-            AssignRightSide(rightOnlyLocks.Union(flexibleLocks));
-
-            return _assignment;
-        }
-
-        private void AssignLeftSide(IEnumerable<OrbAssignment> warlocks)
-        {
             foreach (var warlock in warlocks)
             {
-                if (IsAssigned(warlock.Player)) { continue; }
-
-                if (_assignment.FarLeft == null)
+                if (Assign(assignment, OrbSide.Left, GatewayPosition.Far, warlock))
                 {
-                    _assignment.FarLeft = warlock.Player;
                     continue;
                 }
-                if (_assignment.CloseLeft == null)
+                if(Assign(assignment, OrbSide.Right, GatewayPosition.Far, warlock))
                 {
-                    _assignment.CloseLeft = warlock.Player;
+                    continue;
+                }
+                if(Assign(assignment, OrbSide.Left, GatewayPosition.Close, warlock))
+                {
+                    continue;
+                }
+                if(Assign(assignment, OrbSide.Right, GatewayPosition.Close, warlock))
+                {
                     break;
                 }
             }
+
+            return assignment;
         }
 
-        private void AssignRightSide(IEnumerable<OrbAssignment> warlocks)
+        private static bool Assign(GatewayAssignment assignment, OrbSide side, GatewayPosition position, Player warlock)
         {
-            foreach (var warlock in warlocks)
-            {
-                if (IsAssigned(warlock.Player)) { continue; }
+            if(assignment.Side[side].Position[position] != null) { return false; }
 
-                if (_assignment.FarRight == null)
-                {
-                    _assignment.FarRight = warlock.Player;
-                    continue;
-                }
-                if (_assignment.CloseRight == null)
-                {
-                    _assignment.CloseRight = warlock.Player;
-                    break;
-                }
-            }
-        }
-
-        private bool IsAssigned(Player player)
-        {
-            return _assignment.CloseLeft == player || _assignment.CloseRight == player || _assignment.FarLeft == player || _assignment.FarRight == player;
+            assignment.Side[side].Position[position] = warlock;
+            return true;
         }
     }
 }

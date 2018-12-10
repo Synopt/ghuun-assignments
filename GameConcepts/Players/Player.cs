@@ -20,5 +20,32 @@
         }
 
         public string FullyQualifiedName => $"{WhisperName}-{Server}";
+
+        public int Mobility
+        {
+            get
+            {
+                switch (Class)
+                {
+                    case PlayerClass.DemonHunter:
+                    case PlayerClass.Mage:
+                    case PlayerClass.Monk:
+                    case PlayerClass.Paladin:
+                    case PlayerClass.Warrior:
+                        return 0;
+                    case PlayerClass.DeathKnight:
+                    case PlayerClass.Druid:
+                    case PlayerClass.Hunter:
+                    case PlayerClass.Rogue:
+                    case PlayerClass.Shaman:
+                        return 1;
+                    case PlayerClass.Priest:
+                    case PlayerClass.Warlock:
+                        return 2;
+                    default:
+                        return 2;
+                }
+            }
+        }
     }
 }

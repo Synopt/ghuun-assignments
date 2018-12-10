@@ -26,7 +26,7 @@ namespace Sheets
         static string ApplicationName = "Ghuun Assignments";
         const string SpreadsheetId = "1ggJaUmCahwZ0lE6EyKd_Iz20wgZSykG5RUJcxpIDSbU";
         
-        public static async Task WriteOrbAssignments(Dictionary<int, OrbSet> orbAssignments)
+        public static async Task WriteOrbAssignments(List<OrbAssignment> orbAssignments)
         {
             var service = await GetSheetsService();
             var range = "G'huun Mythic Assignments!E4:F18";
@@ -34,11 +34,15 @@ namespace Sheets
             var valueRange = new ValueRange();
             valueRange.Values = new List<IList<object>> {};
 
-            foreach (var assignment in orbAssignments)
+            foreach (var orbSets in orbAssignments.GroupBy(a => a.Set).OrderBy(g => g.Key))
             {
-                var pair = assignment.Value;
-                valueRange.Values.Add(new List<object> { pair.LeftPair.Thrower.Name, pair.LeftPair.Catcher.Name });
-                valueRange.Values.Add(new List<object> { pair.RightPair.Thrower.Name, pair.RightPair.Catcher.Name });
+                foreach (var sides in orbSets.GroupBy(o => o.Side))
+                {
+                    var thrower = sides.Select(g => g).First(g => g.Role == OrbRole.Thrower);
+                    var catcher = sides.Select(g => g).First(g => g.Role == OrbRole.Catcher);
+
+                    valueRange.Values.Add(new List<object> { thrower.Player.Name, catcher.Player.Name });
+                }
                 valueRange.Values.Add(new List<object>());
             }
 
@@ -135,8 +139,8 @@ namespace Sheets
             var valueRange = new ValueRange();
             valueRange.Values = new List<IList<object>> { };
 
-            valueRange.Values.Add(new List<object> { gatewayAssignment.CloseLeft?.Name ?? "", gatewayAssignment.FarLeft?.Name ?? "" });
-            valueRange.Values.Add(new List<object> { gatewayAssignment.CloseRight?.Name ?? "", gatewayAssignment.FarRight?.Name ?? "" });
+            valueRange.Values.Add(new List<object> { gatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Close]?.Name ?? "", gatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Far]?.Name ?? "" });
+            valueRange.Values.Add(new List<object> { gatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Close]?.Name ?? "", gatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Far]?.Name ?? "" });
 
             var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
             updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;

@@ -15,22 +15,19 @@ namespace GhuunAssignments
         public static async Task Main(string[] args)
         {
             var team = await SpreadsheetService.GetTeam();
-
-            var orbLogic = new OrbAssignmentLogic();
-            var orbAssignments = orbLogic.AssignPlayers(team);
-            await SpreadsheetService.WriteOrbAssignments(orbAssignments);
-            Console.WriteLine("Orb assignments written");
-
-            var orbAssignmentList = orbLogic.ListAssignments();
-
-            await SpreadsheetService.WriteOrbMacros(orbAssignmentList);
-            Console.WriteLine("Macros written");
-
-            var gatewayLogic = new GatewayAssignmentLogic();
-            var gatewayAssignment = gatewayLogic.AssignPlayers(orbAssignmentList);
+            
+            var gatewayAssignment = GatewayAssignmentLogic.AssignGateways(team);
             await SpreadsheetService.WriteGatewayAssignments(gatewayAssignment);
             Console.WriteLine("Gateway assignments written");
 
+            var orbLogic = new OrbAssignmentLogic(gatewayAssignment);
+            var orbAssignmentList = orbLogic.AssignPlayers(team);
+            await SpreadsheetService.WriteOrbAssignments(orbAssignmentList);
+            Console.WriteLine("Orb assignments written");
+
+            await SpreadsheetService.WriteOrbMacros(orbAssignmentList);
+            Console.WriteLine("Macros written");
+            
             var teleportAssignments = TeleportAssignmentLogic.GetTeleportAssignments(orbAssignmentList);
             await SpreadsheetService.WriteTeleportAssignments(teleportAssignments);
             Console.WriteLine("Teleport assignments written");
