@@ -38,10 +38,10 @@ namespace Sheets
             {
                 foreach (var sides in orbSets.GroupBy(o => o.Side))
                 {
-                    var thrower = sides.Select(g => g).First(g => g.Role == OrbRole.Thrower);
-                    var catcher = sides.Select(g => g).First(g => g.Role == OrbRole.Catcher);
+                    var thrower = sides.Select(g => g).FirstOrDefault(g => g.Role == OrbRole.Thrower);
+                    var catcher = sides.Select(g => g).FirstOrDefault(g => g.Role == OrbRole.Catcher);
 
-                    valueRange.Values.Add(new List<object> { thrower.Player.Name, catcher.Player.Name });
+                    valueRange.Values.Add(new List<object> { thrower?.Player?.Name ?? string.Empty, catcher?.Player?.Name ?? string.Empty });
                 }
                 valueRange.Values.Add(new List<object>());
             }
