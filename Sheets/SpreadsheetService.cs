@@ -28,11 +28,7 @@ namespace Sheets
         
         public static async Task WriteOrbAssignments(List<OrbAssignment> orbAssignments)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!E4:F18";
-
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> {};
+            var values = new List<IList<object>> { };
 
             foreach (var orbSets in orbAssignments.GroupBy(a => a.Set).OrderBy(g => g.Key))
             {
@@ -41,151 +37,113 @@ namespace Sheets
                     var thrower = sides.Select(g => g).FirstOrDefault(g => g.Role == OrbRole.Thrower);
                     var catcher = sides.Select(g => g).FirstOrDefault(g => g.Role == OrbRole.Catcher);
 
-                    valueRange.Values.Add(new List<object> { thrower?.Player?.Name ?? string.Empty, catcher?.Player?.Name ?? string.Empty });
+                    values.Add(new List<object> { thrower?.Player?.Name ?? string.Empty, catcher?.Player?.Name ?? string.Empty });
                 }
-                valueRange.Values.Add(new List<object>());
+                values.Add(new List<object>());
             }
 
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!E4:F18", values);
         }
 
         public static async Task WriteOrbMacros(List<OrbAssignment> orbAssignments)
         {
-            var service = await GetSheetsService();
-            var range = "Macros!A1:A";
-
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
+            var values = new List<IList<object>> { };
 
             foreach (var assignment in orbAssignments)
             {
-                if(assignment.Role == OrbRole.Thrower) { continue; }
+                if (assignment.Role == OrbRole.Thrower) { continue; }
 
-                valueRange.Values.Add(new List<object> { assignment.Player.Name });
+                values.Add(new List<object> { assignment.Player.Name });
                 var oppositeSide = assignment.Side == OrbSide.Left ? OrbSide.Right : OrbSide.Left;
                 var otherCatcher = orbAssignments.FirstOrDefault(a => a.Set == assignment.Set && a.Side == oppositeSide && a.Role == OrbRole.Catcher);
 
                 var nextSet = assignment.Set == 5 ? 1 : assignment.Set + 1;
-                var nextCatcher = orbAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Catcher); 
+                var nextCatcher = orbAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Catcher);
                 var nextThrower = orbAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Thrower);
 
-                if(otherCatcher?.Player?.Name != null)
+                if (otherCatcher?.Player?.Name != null)
                 {
-                    valueRange.Values.Add(new List<object> { $"/w {otherCatcher.Player.FullyQualifiedName} orb ready" });
+                    values.Add(new List<object> { $"/w {otherCatcher.Player.FullyQualifiedName} orb ready" });
                 }
 
                 if (nextCatcher?.Player?.Name != null)
                 {
-                    valueRange.Values.Add(new List<object> { $"/w {nextCatcher.Player.FullyQualifiedName} youre next" });
+                    values.Add(new List<object> { $"/w {nextCatcher.Player.FullyQualifiedName} youre next" });
                 }
 
                 if (nextThrower?.Player?.Name != null)
                 {
-                    valueRange.Values.Add(new List<object> { $"/w {nextThrower.Player.FullyQualifiedName} youre next" });
+                    values.Add(new List<object> { $"/w {nextThrower.Player.FullyQualifiedName} youre next" });
                 }
             }
 
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("Macros!A1:A", values);
         }
 
         public static async Task WriteStatueAssignments(IEnumerable<StatueAssignment> statueAssignment)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!F22:F23";
-
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
+            var values = new List<IList<object>> { };
 
             var assignments = statueAssignment.ToList();
 
-            valueRange.Values.Add(new List<object> { statueAssignment.FirstOrDefault(a => a.Side == OrbSide.Left)?.Player?.Name ?? string.Empty });
-            valueRange.Values.Add(new List<object> { statueAssignment.FirstOrDefault(a => a.Side == OrbSide.Right)?.Player?.Name ?? string.Empty });
+            values.Add(new List<object> { statueAssignment.FirstOrDefault(a => a.Side == OrbSide.Left)?.Player?.Name ?? string.Empty });
+            values.Add(new List<object> { statueAssignment.FirstOrDefault(a => a.Side == OrbSide.Right)?.Player?.Name ?? string.Empty });
 
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!F22:F23", values);
         }
 
         public static async Task WriteTeleportAssignments(IEnumerable<TeleportAssignment> teleportAssignments)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!D26:H27";
-
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
+            var values = new List<IList<object>> { };
 
             var assignments = teleportAssignments.ToList();
 
             var leftAssignments = teleportAssignments.Where(a => a.Side == OrbSide.Left).Select(a => a.Player.Name).PadTo(5);
             var rightAssignments = teleportAssignments.Where(a => a.Side == OrbSide.Right).Select(a => a.Player.Name).PadTo(5);
 
-            valueRange.Values.Add(new List<object>(leftAssignments));
-            valueRange.Values.Add(new List<object>(rightAssignments));
+            values.Add(new List<object>(leftAssignments));
+            values.Add(new List<object>(rightAssignments));
 
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!D26:H27", values);
         }
 
         public static async Task WriteGatewayAssignments(GatewayAssignment gatewayAssignment)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!D22:E23";
+            var values = new List<IList<object>> { };
 
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
+            values.Add(new List<object> { gatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Close]?.Name ?? "", gatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Far]?.Name ?? "" });
+            values.Add(new List<object> { gatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Close]?.Name ?? "", gatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Far]?.Name ?? "" });
 
-            valueRange.Values.Add(new List<object> { gatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Close]?.Name ?? "", gatewayAssignment.Side[OrbSide.Left].Position[GatewayPosition.Far]?.Name ?? "" });
-            valueRange.Values.Add(new List<object> { gatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Close]?.Name ?? "", gatewayAssignment.Side[OrbSide.Right].Position[GatewayPosition.Far]?.Name ?? "" });
-
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!D22:E23", values);
         }
 
         public static async Task WriteInterruptAssignments(InterruptAssignment interruptAssignments)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!E40:I47";
-            
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
+            var values = new List<IList<object>> { };
 
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[1], 1, 5));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[1], 2, 5));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[2], 1, 3));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[2], 2, 3));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[3], 1, 3));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[3], 2, 3));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[4], 1, 3));
-            valueRange.Values.Add(WriteInterruptSet(interruptAssignments.Sets[4], 2, 3));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[1], 1, 5));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[1], 2, 5));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[2], 1, 3));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[2], 2, 3));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[3], 1, 3));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[3], 2, 3));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[4], 1, 3));
+            values.Add(WriteInterruptSet(interruptAssignments.Sets[4], 2, 3));
 
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!E40:I47", values);
         }
 
         public static async Task WriteTendrilAssignments(InterruptAssignment interruptAssignments)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!I43:I47";
+            var values = new List<IList<object>> { };
 
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
+            values.Add(new List<object> { "Tendrils" });
+            values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[1]?.Name ?? string.Empty });
+            values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[2]?.Name ?? string.Empty });
+            values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[1]?.Name ?? string.Empty });
+            values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[2]?.Name ?? string.Empty });
 
-            valueRange.Values.Add(new List<object> { "Tendrils" });
-            valueRange.Values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[1]?.Name ?? string.Empty });
-            valueRange.Values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[2]?.Name ?? string.Empty });
-            valueRange.Values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[1]?.Name ?? string.Empty });
-            valueRange.Values.Add(new List<object> { interruptAssignments.Tendrils.Interrupts[2]?.Name ?? string.Empty });
-
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!I43:I47", values);
         }
 
         private static IList<object> WriteInterruptSet(InterruptSet interruptSet, int interruptNumber, int padTo)
@@ -195,18 +153,13 @@ namespace Sheets
 
         public static async Task WriteBurstingBoilAssignments(BurstingBoilAssignment burstingBoilAssignments)
         {
-            var service = await GetSheetsService();
-            var range = "G'huun Mythic Assignments!C112:I114";
+            var values = new List<IList<object>> { };
 
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { };
-            valueRange.Values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Star].Select(p => p.Name).PadTo(7)));
-            valueRange.Values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Moon].Select(p => p.Name).PadTo(7)));
-            valueRange.Values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Diamond].Select(p => p.Name).PadTo(7)));
+            values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Star].Select(p => p.Name).PadTo(7)));
+            values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Moon].Select(p => p.Name).PadTo(7)));
+            values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Diamond].Select(p => p.Name).PadTo(7)));
 
-            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-            updateRequest.Execute();
+            await UpdateSpreadsheet("G'huun Mythic Assignments!C112:I114", values);
         }
 
         public static async Task<List<Player>> GetTeam()
@@ -224,7 +177,7 @@ namespace Sheets
             {
                 foreach (var row in values)
                 {
-                    if(((string)row[5]).ToLower() == "yes")
+                    if (((string)row[5]).ToLower() == "yes")
                     {
                         team.Add(new Player
                         {
@@ -234,11 +187,11 @@ namespace Sheets
                             WhisperName = (string)row[3],
                             Server = (string)row[4]
                         });
-                    }                    
+                    }
                 }
             }
-                       
-            if(team.Count() > 20)
+
+            if (team.Count() > 20)
             {
                 throw new InvalidOperationException("Can't have more than 20 people in the team");
             }
@@ -264,7 +217,7 @@ namespace Sheets
             throw new ArgumentOutOfRangeException(nameof(input), $"{input} is not a valid {nameof(PlayerRole)}"); ;
         }
 
-        public static async Task<SheetsService> GetSheetsService()
+        private static async Task<SheetsService> GetSheetsService()
         {
             UserCredential credentials;
             using (var stream = new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
@@ -278,6 +231,18 @@ namespace Sheets
                 HttpClientInitializer = credentials,
                 ApplicationName = ApplicationName,
             });
+        }
+
+        private static async Task UpdateSpreadsheet(string range, List<IList<object>> values)
+        {
+            var service = await GetSheetsService();
+
+            var valueRange = new ValueRange();
+            valueRange.Values = values;
+
+            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetId, range);
+            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+            updateRequest.Execute();
         }
     }
 }
