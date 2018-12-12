@@ -16,41 +16,41 @@ namespace GhuunAssignments
         public static async Task Main(string[] args)
         {
             var team = await SpreadsheetService.GetTeam();
-            
+
             var gatewayAssignment = GatewayAssignmentLogic.AssignGateways(team);
-            await SpreadsheetService.WriteGatewayAssignments(gatewayAssignment);
+            await MainSheetService.WriteGatewayAssignments(gatewayAssignment);
             Console.WriteLine("Gateway assignments written");
 
             var orbLogic = new OrbAssignmentLogic(gatewayAssignment);
             var orbAssignmentList = orbLogic.AssignPlayers(team);
-            await SpreadsheetService.WriteOrbAssignments(orbAssignmentList);
+            await MainSheetService.WriteOrbAssignments(orbAssignmentList);
             Console.WriteLine("Orb assignments written");
 
-            await SpreadsheetService.WriteOrbMacros(orbAssignmentList);
+            await MainSheetService.WriteOrbMacros(orbAssignmentList);
             Console.WriteLine("Macros written");
             
             var teleportAssignments = TeleportAssignmentLogic.GetTeleportAssignments(orbAssignmentList);
-            await SpreadsheetService.WriteTeleportAssignments(teleportAssignments);
+            await MainSheetService.WriteTeleportAssignments(teleportAssignments);
             Console.WriteLine("Teleport assignments written");
             
             var statueAssignments = StatueAssignmentLogic.GetStatueAssignment(orbAssignmentList);
-            await SpreadsheetService.WriteStatueAssignments(statueAssignments);
+            await MainSheetService.WriteStatueAssignments(statueAssignments);
             Console.WriteLine("Statue assignments written");
 
             var interruptAssignments = InterruptAssignmentLogic.AssignInterrupts(orbAssignmentList);
-            await SpreadsheetService.WriteInterruptAssignments(interruptAssignments);
+            await MainSheetService.WriteInterruptAssignments(interruptAssignments);
             Console.WriteLine("Interrupt assignments written");
-            await SpreadsheetService.WriteTendrilAssignments(interruptAssignments);
+            await MainSheetService.WriteTendrilAssignments(interruptAssignments);
             Console.WriteLine("Tendril assignments written");
 
             var burstingBoilAssignments = BurstingBoilAssignmentLogic.AssignBurstingBoilAreas(orbAssignmentList);
-            await SpreadsheetService.WriteBurstingBoilAssignments(burstingBoilAssignments);
+            await MainSheetService.WriteBurstingBoilAssignments(burstingBoilAssignments);
             Console.WriteLine("Bursting boil assignments written");
 
             var p3Assignments = PhaseThreeAreaAssignmentLogic.AssignPhaseThreeAreas(orbAssignmentList);
-            await SpreadsheetService.WriteP3Assignments(p3Assignments);
+            await MainSheetService.WriteP3Assignments(p3Assignments);
             Console.WriteLine("Phase three assignments written");
-
+            
             Console.ReadKey();
         }
     }
