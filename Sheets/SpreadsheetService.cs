@@ -16,6 +16,7 @@ using GameConcepts.Players;
 using GameConcepts.Statues;
 using GameConcepts.Interrupts;
 using GameConcepts.BurstingBoilAreas;
+using GameConcepts.PhaseThreeAreas;
 
 namespace Sheets
 {
@@ -160,6 +161,20 @@ namespace Sheets
             values.Add(new List<object>(burstingBoilAssignments.Sides[BurstingBoilArea.Diamond].Select(p => p.Name).PadTo(7)));
 
             await UpdateSpreadsheet("G'huun Mythic Assignments!C112:I114", values);
+        }
+
+        public static async Task WriteP3Assignments(PhaseThreeAreaAssignment p3Assignments)
+        {
+            var values = new List<IList<object>> { };
+
+            foreach (var area in p3Assignments.Areas)
+            {
+                values.Add(new List<object>(area.Value.OrderBy(SpreadsheetOrder).Select(p => p.Name).PadTo(4)));
+            }
+
+            int SpreadsheetOrder(Player player) => player.Role == PlayerRole.MeleeDps ? 0 : player.Role == PlayerRole.RangedDps || player.Role == PlayerRole.Tank ? 1 : 2;
+
+            await UpdateSpreadsheet("G'huun Mythic Assignments!C140:F144", values);
         }
 
         public static async Task<List<Player>> GetTeam()

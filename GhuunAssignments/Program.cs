@@ -7,6 +7,7 @@ using GameConcepts.Teleports;
 using GameConcepts.Statues;
 using GameConcepts.Interrupts;
 using GameConcepts.BurstingBoilAreas;
+using GameConcepts.PhaseThreeAreas;
 
 namespace GhuunAssignments
 {
@@ -45,6 +46,10 @@ namespace GhuunAssignments
             var burstingBoilAssignments = BurstingBoilAssignmentLogic.AssignBurstingBoilAreas(orbAssignmentList);
             await SpreadsheetService.WriteBurstingBoilAssignments(burstingBoilAssignments);
             Console.WriteLine("Bursting boil assignments written");
+
+            var p3Assignments = PhaseThreeAreaAssignmentLogic.AssignPhaseThreeAreas(orbAssignmentList);
+            await SpreadsheetService.WriteP3Assignments(p3Assignments);
+            Console.WriteLine("Phase three assignments written");
 
             Console.ReadKey();
         }
