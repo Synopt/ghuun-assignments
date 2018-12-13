@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using GameConcepts.BurstingBoilAreas;
 using GameConcepts.Gateways;
@@ -174,7 +175,7 @@ namespace Sheets
         private static Request SetBurstingBoilAreaRequest(int sheetId, PersonalBurstingBoilAssignment assignment)
             => SingleValueRequest(sheetId, assignment.Area.ToString(), 30, 1);
         private static Request SetP3AreaRequest(int sheetId, PersonalP3AreaAssignment assignment)
-            => SingleValueRequest(sheetId, assignment.Area.ToString(), 33, 1);
+            => SingleValueRequest(sheetId, ToSentenceCase(assignment.Area.ToString()), 33, 1);
 
         private static List<Request> BuildSetOrbRequests(int sheetId, OrbAssignment assignment)
         {
@@ -211,6 +212,8 @@ namespace Sheets
                 default: return "";
             }
         }
+
+        private static string ToSentenceCase(string str) =>  Regex.Replace(str, "[a-z][A-Z]", m => $"{m.Value[0]} {m.Value[1]}");
 
         private static List<Request> SetMacro(int sheetId, string macro)
         {
