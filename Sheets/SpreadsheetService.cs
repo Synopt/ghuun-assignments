@@ -17,26 +17,7 @@ namespace Sheets
     {
         private static string[] Scopes = { SheetsService.Scope.Spreadsheets };
         private static string ApplicationName = "Ghuun Assignments";
-        private const string SpreadsheetId = "1ggJaUmCahwZ0lE6EyKd_Iz20wgZSykG5RUJcxpIDSbU";
-        private const int AssignmentTemplateId = 695235050;
-
-        public static async Task CopyAssignmentSpreadsheet(string newName)
-        {
-            var service = await GetSheetsService();
-
-            var newSheet = new Request
-            {
-                DuplicateSheet = new DuplicateSheetRequest
-                {
-                    SourceSheetId = AssignmentTemplateId,
-                    NewSheetName = $"A - {newName}",
-                    InsertSheetIndex = 99
-                }
-            };
-
-            var y = new BatchUpdateSpreadsheetRequest { Requests = new List<Request> { newSheet } };
-            var response = await service.Spreadsheets.BatchUpdate(y, SpreadsheetId).ExecuteAsync();
-        }
+        public const string SpreadsheetId = "1ggJaUmCahwZ0lE6EyKd_Iz20wgZSykG5RUJcxpIDSbU";
 
         public static async Task<IEnumerable<SheetProperties>> GetAllSheets()
         {
@@ -82,7 +63,7 @@ namespace Sheets
             return team;
         }
 
-        internal static async Task<SheetsService> GetSheetsService()
+        public static async Task<SheetsService> GetSheetsService()
         {
             UserCredential credentials;
             using (var stream = new FileStream("credentials.json", FileMode.Open, FileAccess.Read))

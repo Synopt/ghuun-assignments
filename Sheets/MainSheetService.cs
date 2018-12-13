@@ -51,26 +51,9 @@ namespace Sheets
                 if (assignment.Role == OrbRole.Thrower) { continue; }
 
                 values.Add(new List<object> { assignment.Player.Name });
-                var oppositeSide = assignment.Side == OrbSide.Left ? OrbSide.Right : OrbSide.Left;
-                var otherCatcher = orbAssignments.FirstOrDefault(a => a.Set == assignment.Set && a.Side == oppositeSide && a.Role == OrbRole.Catcher);
-
-                var nextSet = assignment.Set == 5 ? 1 : assignment.Set + 1;
-                var nextCatcher = orbAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Catcher);
-                var nextThrower = orbAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Thrower);
-
-                if (otherCatcher?.Player?.Name != null)
+                foreach (var macroLine in assignment.Macro.Split('\n'))
                 {
-                    values.Add(new List<object> { $"/w {otherCatcher.Player.FullyQualifiedName} orb ready" });
-                }
-
-                if (nextCatcher?.Player?.Name != null)
-                {
-                    values.Add(new List<object> { $"/w {nextCatcher.Player.FullyQualifiedName} youre next" });
-                }
-
-                if (nextThrower?.Player?.Name != null)
-                {
-                    values.Add(new List<object> { $"/w {nextThrower.Player.FullyQualifiedName} youre next" });
+                    values.Add(new List<object> { macroLine });
                 }
             }
 

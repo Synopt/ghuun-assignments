@@ -8,6 +8,16 @@ namespace GameConcepts.PhaseThreeAreas
 {
     public static class PhaseThreeAreaAssignmentLogic
     {
+
+        public static List<PersonalP3AreaAssignment> ListAssignments(PhaseThreeAreaAssignment assignments)
+        {
+            return assignments.Areas.SelectMany(a => a.Value.Select(p => new PersonalP3AreaAssignment
+            {
+                Area = a.Key,
+                Player = p
+            })).ToList();
+        }
+
         public static PhaseThreeAreaAssignment AssignPhaseThreeAreas(List<OrbAssignment> orbAssignments)
         {
             var assignments = new PhaseThreeAreaAssignment();
@@ -38,7 +48,7 @@ namespace GameConcepts.PhaseThreeAreas
         {
             var area = (PhaseThreeArea)0;
             var meleeDps = orbAssignments.Where(a => a.Player.Role == PlayerRole.MeleeDps);
-            
+
             foreach (var melee in meleeDps.OrderBy(Positions))
             {
                 assignments.Areas[area].Add(melee.Player);
@@ -55,18 +65,18 @@ namespace GameConcepts.PhaseThreeAreas
             {
                 foreach (PhaseThreeArea area in Enum.GetValues(typeof(PhaseThreeArea)))
                 {
-                    if(assignments.Areas[area].Count() < 4)
-                    { 
+                    if (assignments.Areas[area].Count() < 4)
+                    {
                         assignments.Areas[area].Add(orbAssignment.Player);
                         break;
                     }
-                }                
+                }
             }
         }
-                
+
         private static int Positions(OrbAssignment assignment)
         {
-            if(assignment.Role == OrbRole.Thrower)
+            if (assignment.Role == OrbRole.Thrower)
             {
                 return assignment.Side == OrbSide.Left ? 0 : 2;
             }

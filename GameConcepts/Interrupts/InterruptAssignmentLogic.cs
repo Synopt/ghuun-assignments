@@ -1,6 +1,5 @@
 ﻿using GameConcepts.Orbs;
 using GameConcepts.Players;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,6 +7,38 @@ namespace GameConcepts.Interrupts
 {
     public static class InterruptAssignmentLogic
     {
+        public static List<PersonalInterruptAssignment> ListAssignments(InterruptAssignment assignments)
+        {
+            var personalAssignments = assignments.Sets.SelectMany(s => s.Value.Adds.SelectMany(a => a.Value.Interrupts.Select(i => new PersonalInterruptAssignment
+            {
+                Player = i.Value,
+                Order = i.Key,
+                AddNumber = a.Key,
+                SetNumber = s.Key
+            }))).ToList();
+
+            foreach (var personalAssignment in personalAssignments)
+            {
+                var inverseOrder = personalAssignment.Order == 1 ? 2 : 1;
+                personalAssignment.Partner = personalAssignments.FirstOrDefault(pa => pa.SetNumber == personalAssignment.SetNumber && pa.AddNumber == personalAssignment.AddNumber && pa.Order == inverseOrder)?.Player;
+            }
+
+            return personalAssignments;
+        }
+
+        public static IEnumerable<PersonalTendrilAssignment> ListTendrilAssignments(InterruptAssignment assignments)
+        {
+            foreach (var tendrilAssignment in assignments.Tendrils.Interrupts)
+            {
+                yield return new PersonalTendrilAssignment
+                {
+                    Player = tendrilAssignment.Value,
+                    Order = tendrilAssignment.Key,
+                    Partner = assignments.Tendrils.Interrupts.FirstOrDefault(t => t.Value != tendrilAssignment.Value).Value
+                };
+            }
+        }
+
         public static InterruptAssignment AssignInterrupts(List<OrbAssignment> orbAssignments)
         {
             var interruptAssignment = new InterruptAssignment();
@@ -30,7 +61,7 @@ namespace GameConcepts.Interrupts
             var aoeStunners = validPlayersFirst3.Where(p => p.Player.HasAoeStun);
             foreach (var stunner in aoeStunners)
             {
-                if(firstSet.Adds[2].Interrupts[1] == null)
+                if (firstSet.Adds[2].Interrupts[1] == null)
                 {
                     firstSet.Adds[2].Interrupts[1] = stunner.Player;
                     firstSet.Adds[3].Interrupts[1] = stunner.Player;
@@ -47,9 +78,9 @@ namespace GameConcepts.Interrupts
             AssignRest(validPlayersFirst3, firstSet.Adds[1], firstSet);
             AssignRest(validPlayersFirst3, firstSet.Adds[2], firstSet);
             AssignRest(validPlayersFirst3, firstSet.Adds[3], firstSet);
-            
+
             var validPlayersLast2 = orbAssignments.Where(a => a.Set != 2 && a.Set != 1).OrderBy(a => PreferRanged(a.Player)).ThenBy(p => p.Player.Name).ToList();
-            
+
             AssignRest(validPlayersLast2, firstSet.Adds[4], firstSet);
             AssignRest(validPlayersLast2, firstSet.Adds[5], firstSet);
         }
@@ -58,7 +89,7 @@ namespace GameConcepts.Interrupts
         {
             var secondSet = interruptAssignment.Sets[2];
             var validPlayers = orbAssignments.Where(a => a.Set != 2).OrderBy(a => PreferRanged(a.Player)).ThenBy(p => p.Player.Name).ToList();
-            
+
             AssignRest(validPlayers, secondSet.Adds[1], secondSet);
             AssignRest(validPlayers, secondSet.Adds[2], secondSet);
             AssignRest(validPlayers, secondSet.Adds[3], secondSet);
@@ -90,12 +121,12 @@ namespace GameConcepts.Interrupts
 
             foreach (var player in validPlayers)
             {
-                if(IsAssigned(player.Player, interruptAssignment.Sets[3]) || IsAssigned(player.Player, interruptAssignment.Sets[4]))
+                if (IsAssigned(player.Player, interruptAssignment.Sets[3]) || IsAssigned(player.Player, interruptAssignment.Sets[4]))
                 {
                     continue;
                 }
 
-                if(interruptAssignment.Tendrils.Interrupts[1] == null)
+                if (interruptAssignment.Tendrils.Interrupts[1] == null)
                 {
                     interruptAssignment.Tendrils.Interrupts[1] = player.Player;
                     continue;
@@ -113,9 +144,9 @@ namespace GameConcepts.Interrupts
         {
             foreach (var assignment in validChoices)
             {
-                if(IsAssigned(assignment.Player, set)) { continue; }
+                if (IsAssigned(assignment.Player, set)) { continue; }
 
-                if(interruptAdd.Interrupts[1] == null)
+                if (interruptAdd.Interrupts[1] == null)
                 {
                     interruptAdd.Interrupts[1] = assignment.Player;
                     continue;
@@ -157,7 +188,7 @@ namespace GameConcepts.Interrupts
                     return 3;
             }
         }
-        
+
         private static bool IsAssigned(Player player, InterruptSet set)
         {
             return set.Adds.Any(a => a.Value.Interrupts.Any(i => i.Value == player));

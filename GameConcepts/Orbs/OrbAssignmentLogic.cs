@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using GameConcepts.Players;
 using GameConcepts.Gateways;
+using System.Text;
+using System;
 
 namespace GameConcepts.Orbs
 {
@@ -36,18 +38,84 @@ namespace GameConcepts.Orbs
             var assignmentsList = ListAssignments();
             AssignRest(team, assignmentsList);
 
+            GenerateMacros(assignmentsList);
+            SetWhisperers(assignmentsList);
+            SetPartners(assignmentsList);
+
             return assignmentsList;
         }
 
         private List<OrbAssignment> ListAssignments()
         {
-            return Assignments.SelectMany(i => i.Value.Pairs.SelectMany(pa => pa.Value.Positions.Select(po => new OrbAssignment
+            var assignments = Assignments.SelectMany(i => i.Value.Pairs.SelectMany(pa => pa.Value.Positions.Select(po => new OrbAssignment
             {
                 Set = i.Key,
                 Side = pa.Key,
                 Role = po.Key,
                 Player = po.Value
             }))).ToList();
+
+            return assignments;
+        }
+
+        private void GenerateMacros(List<OrbAssignment> assignmentList)
+        {
+            foreach (var assignment in assignmentList)
+            {
+                assignment.Macro = GenerateMacro(assignment, assignmentList);
+            }
+        }
+
+        private string GenerateMacro(OrbAssignment assignment, List<OrbAssignment> allAssignments)
+        {
+            if (assignment.Role == OrbRole.Thrower) { return null; }
+            
+            var oppositeSide = assignment.Side == OrbSide.Left ? OrbSide.Right : OrbSide.Left;
+            var otherCatcher = allAssignments.FirstOrDefault(a => a.Set == assignment.Set && a.Side == oppositeSide && a.Role == OrbRole.Catcher);
+
+            var nextSet = assignment.Set == 5 ? 1 : assignment.Set + 1;
+            var nextCatcher = allAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Catcher);
+            var nextThrower = allAssignments.FirstOrDefault(a => a.Set == nextSet && a.Side == assignment.Side && a.Role == OrbRole.Thrower);
+
+            var result = new StringBuilder();
+
+            if (otherCatcher?.Player?.Name != null)
+            {
+                result.Append($"/w {otherCatcher.Player.FullyQualifiedName} orb ready");
+                result.Append('\n');
+            }
+
+            if (nextCatcher?.Player?.Name != null)
+            {
+                result.Append($"/w {nextCatcher.Player.FullyQualifiedName} youre next");
+                result.Append('\n');
+            }
+
+            if (nextThrower?.Player?.Name != null)
+            {
+                result.Append($"/w {nextThrower.Player.FullyQualifiedName} youre next");
+            }
+
+            return result.ToString().Trim(Environment.NewLine.ToCharArray());
+        }
+
+        private void SetWhisperers(List<OrbAssignment> assignmentList)
+        {
+            foreach (var assignment in assignmentList)
+            {
+                var previousSet = assignment.Set == 1 ? 5 : assignment.Set - 1;
+                assignment.Whisperer = assignmentList.First(a => a.Role == OrbRole.Catcher && a.Side == assignment.Side && a.Set == previousSet).Player;
+            }
+        }
+
+        private void SetPartners(List<OrbAssignment> assignmentList)
+        {
+            foreach (var assignment in assignmentList)
+            {
+                var inverseOrbRole = assignment.Role == OrbRole.Catcher ? OrbRole.Thrower : OrbRole.Catcher;
+
+                assignment.Parner = assignmentList.First(a => a.Role == inverseOrbRole && a.Side == assignment.Side && a.Set == assignment.Set).Player;
+            }
         }
 
         private void AssignTanks(List<Player> team)

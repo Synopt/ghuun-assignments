@@ -8,6 +8,8 @@ using GameConcepts.Statues;
 using GameConcepts.Interrupts;
 using GameConcepts.BurstingBoilAreas;
 using GameConcepts.PhaseThreeAreas;
+using GameConcepts.PersonalAssignments;
+using System.Linq;
 
 namespace GhuunAssignments
 {
@@ -29,11 +31,11 @@ namespace GhuunAssignments
             await MainSheetService.WriteOrbMacros(orbAssignmentList);
             Console.WriteLine("Macros written");
             
-            var teleportAssignments = TeleportAssignmentLogic.GetTeleportAssignments(orbAssignmentList);
+            var teleportAssignments = TeleportAssignmentLogic.GetTeleportAssignments(orbAssignmentList).ToList();
             await MainSheetService.WriteTeleportAssignments(teleportAssignments);
             Console.WriteLine("Teleport assignments written");
             
-            var statueAssignments = StatueAssignmentLogic.GetStatueAssignment(orbAssignmentList);
+            var statueAssignments = StatueAssignmentLogic.GetStatueAssignment(orbAssignmentList).ToList();
             await MainSheetService.WriteStatueAssignments(statueAssignments);
             Console.WriteLine("Statue assignments written");
 
@@ -50,7 +52,23 @@ namespace GhuunAssignments
             var p3Assignments = PhaseThreeAreaAssignmentLogic.AssignPhaseThreeAreas(orbAssignmentList);
             await MainSheetService.WriteP3Assignments(p3Assignments);
             Console.WriteLine("Phase three assignments written");
-            
+
+            var personalAssignmentInput = new PersonalAssignmentInput
+            {
+                BurstingBoils = BurstingBoilAssignmentLogic.ListAssignments(burstingBoilAssignments),
+                Gateways = GatewayAssignmentLogic.ListAssignments(gatewayAssignment),
+                Interrupts = InterruptAssignmentLogic.ListAssignments(interruptAssignments),
+                Tendrils = InterruptAssignmentLogic.ListTendrilAssignments(interruptAssignments).ToList(),
+                Orbs = orbAssignmentList,
+                PhaseThreeAreas = PhaseThreeAreaAssignmentLogic.ListAssignments(p3Assignments),
+                Statues = statueAssignments,
+                Teleports = teleportAssignments
+            };
+
+            var personalAssignments = PersonalAssignmentLogic.ListAssignments(personalAssignmentInput);
+            await PersonalAssignmentService.WritePersonalAssignments(personalAssignments);
+            Console.WriteLine("Personal assignments written");
+
             Console.ReadKey();
         }
     }

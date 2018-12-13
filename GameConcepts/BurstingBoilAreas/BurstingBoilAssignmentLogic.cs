@@ -10,6 +10,15 @@ namespace GameConcepts.BurstingBoilAreas
         private const int MaxMoon = 7;
         private const int DiamondMax = 7;
 
+        public static List<PersonalBurstingBoilAssignment> ListAssignments(BurstingBoilAssignment assignments)
+        {
+            return assignments.Sides.SelectMany(s => s.Value.Select(p => new PersonalBurstingBoilAssignment
+            {
+                Area = s.Key,
+                Player = p
+            })).ToList();
+        }
+
         public static BurstingBoilAssignment AssignBurstingBoilAreas(List<OrbAssignment> orbAssignments)
         {
             var playersLeft = orbAssignments;
